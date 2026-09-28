@@ -1,0 +1,3 @@
+# Toolchain for building the weapon models (https://github.com/rojo-rbx/rokit)
+[tools]
+lune = "lune-org/lune@0.10.4"

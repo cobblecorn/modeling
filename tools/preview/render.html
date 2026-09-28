@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#1d2027} canvas{display:block}</style>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { modelGroup, mannequin, dress, HOLD_POSE, poseNames } from './scene.js';
+
+const W = 1600, H = 1000;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+renderer.setSize(W, H);
+renderer.setScissorTest(true);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+function makeScene(obj, bg) {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(bg);
+  scene.environment = envTex;
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+  sun.position.set(4, 8, 6);
+  scene.add(sun, new THREE.AmbientLight(0xffffff, 0.35));
+  scene.add(obj);
+  return scene;
+}
+
+function frame(obj, dir, fov = 30, pad = 1.15) {
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const radius = size.length() / 2;
+  const cam = new THREE.PerspectiveCamera(fov, 1, 0.05, 500);
+  const dist = (radius * pad) / Math.sin((fov * Math.PI) / 360);
+  cam.position.copy(center).add(dir.clone().normalize().multiplyScalar(dist));
+  cam.lookAt(center);
+  return cam;
+}
+
+function draw(scene, cam, x, y, w, h) {
+  cam.aspect = w / h;
+  cam.updateProjectionMatrix();
+  renderer.setViewport(x, H - y - h, w, h);
+  renderer.setScissor(x, H - y - h, w, h);
+  renderer.render(scene, cam);
+}
+
+const data = await (await fetch('out/weapons.json')).json();
+
+window.weaponNames = data.map(w => w.name);
+window.renderWeapon = (i, opts = {}) => {
+  const weapon = data[i];
+  renderer.clear();
+  // A: weapon alone, 3/4
+  const alone = new THREE.Group();
+  for (const m of weapon.models) alone.add(modelGroup(m));
+  draw(makeScene(alone, 0x2a2f3a), frame(alone, new THREE.Vector3(1.2, 0.5, -1.0)), 0, 0, 800, 1000);
+  // B: weapon alone, side view looking at the flat (from +X)
+  const side = new THREE.Group();
+  for (const m of weapon.models) side.add(modelGroup(m));
+  draw(makeScene(side, 0x262a33), frame(side, new THREE.Vector3(1, 0.05, 0.001)), 800, 0, 400, 500);
+  // C: posed rig if the weapon has poses, else from the front edge (-Z)
+  const pose = weapon.models.flatMap(poseNames)[0];
+  const edge = new THREE.Group();
+  for (const m of weapon.models) edge.add(modelGroup(m, pose));
+  const dirC = pose ? new THREE.Vector3(1.2, 0.4, 0.6) : new THREE.Vector3(0.001, 0.05, -1);
+  draw(makeScene(edge, 0x262a33), frame(edge, dirC), 1200, 0, 400, 500);
+  // D: held (tool-hold pose), front 3/4
+  const held = mannequin(HOLD_POSE);
+  dress(held, weapon, 'hold');
+  draw(makeScene(held.group, 0x232833), frame(held.group, new THREE.Vector3(-1.1, 0.45, -1.4), 30, 1.0), 800, 500, 400, 500);
+  // E: holstered, back 3/4
+  const hol = mannequin({});
+  dress(hol, weapon, 'holster');
+  draw(makeScene(hol.group, 0x232833), frame(hol.group, new THREE.Vector3(0.9, 0.35, 1.4), 30, 1.0), 1200, 500, 400, 500);
+  return true;
+};
+// Square icon on a transparent background (for Tool.TextureId)
+window.renderIcon = (i) => {
+  const weapon = data[i];
+  renderer.setScissor(0, 0, W, H);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  document.body.style.background = 'transparent';
+  document.documentElement.style.background = 'transparent';
+  const g = new THREE.Group();
+  const pair = weapon.models.some((m) => m.name === 'OffhandDagger');
+  for (const m of weapon.models) {
+    // icons show just the weapon itself, not quivers
+    if (m.name === 'Quiver') continue;
+    const inner = modelGroup(m);
+    if (pair) {
+      // twin daggers: cross them at mid-blade
+      const holder = new THREE.Group();
+      inner.position.set(m.name === 'OffhandDagger' ? -0.5 : 0, -0.9, 0);
+      holder.add(inner);
+      holder.rotation.x = m.name === 'OffhandDagger' ? Math.PI / 4 : -Math.PI / 4;
+      g.add(holder);
+    } else {
+      g.add(inner);
+    }
+  }
+  if (!pair) g.rotation.x = -Math.PI / 4;
+  const scene = makeScene(g, 0x000000);
+  scene.background = null;
+  const cam = frame(g, new THREE.Vector3(1, 0.12, 0.25), 24, 1.02);
+  draw(scene, cam, 0, 0, 512, 512);
+  return true;
+};
+window.resetBackground = () => {
+  document.body.style.background = '';
+  document.documentElement.style.background = '';
+};
+
+// All weapons side by side for the README banner
+window.renderLineup = () => {
+  renderer.setScissor(0, 0, W, H);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear();
+  const row = new THREE.Group();
+  let x = 0;
+  data.forEach((weapon) => {
+    const g = new THREE.Group();
+    for (const m of weapon.models) if (m.name !== 'Quiver' && m.name !== 'OffhandDagger') g.add(modelGroup(m));
+    g.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(g);
+    const size = box.getSize(new THREE.Vector3());
+    const holder = new THREE.Group();
+    holder.add(g);
+    holder.rotation.y = Math.PI / 2 - 0.35;
+    holder.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(holder);
+    holder.position.set(x - b2.min.x, -b2.min.y, 0);
+    x += (b2.max.x - b2.min.x) + 1.2;
+    row.add(holder);
+  });
+  const scene = makeScene(row, 0x1d2027);
+  draw(scene, frame(row, new THREE.Vector3(0.0001, 0.08, 1), 22, 0.4), 0, 0, 1600, 560);
+  return true;
+};
+window.ready = true;
+</script>
+</body>
+</html>

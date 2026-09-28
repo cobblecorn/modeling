@@ -1,0 +1,6 @@
+node_modules/
+*.rbxl.lock
+*.rbxlx.lock
+.DS_Store
+tools/preview/out/
+sourcemap.json
