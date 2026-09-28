@@ -167,6 +167,25 @@ local function sourcemapNode(inst)
 end
 
 --------------------------------------------------------------------------------
+-- Enemy AI scripts
+--------------------------------------------------------------------------------
+
+local GROUND_AIS = { "ClankerAI", "SpeederAI", "GorillaBossAI" }
+
+local function groundAI(name)
+	local brain = Instance.new("Script")
+	brain.Name = name
+	brain.Source = fs.readFile("src/runtime/enemies/" .. name .. ".server.luau")
+	local kit = Instance.new("ModuleScript")
+	kit.Name = "EnemyKit"
+	kit.Source = fs.readFile("src/runtime/enemies/EnemyKit.luau")
+	kit.Parent = brain
+	table.insert(ToolKit.sources, { inst = brain, path = "src/runtime/enemies/" .. name .. ".server.luau" })
+	table.insert(ToolKit.sources, { inst = kit, path = "src/runtime/enemies/EnemyKit.luau" })
+	return brain
+end
+
+--------------------------------------------------------------------------------
 -- Build
 --------------------------------------------------------------------------------
 
@@ -214,6 +233,12 @@ if not only and not ToolKit.skipScripts then
 	fs.writeFile("dist/DroneAI.rbxm", roblox.serializeModel({ droneAI }))
 	print("wrote dist/DroneAI.rbxm")
 	print("wrote dist/WeaponsPack.rbxm")
+
+	-- ground enemy brains: Script + its EnemyKit module, dropped into the imported model
+	for _, name in GROUND_AIS do
+		fs.writeFile("dist/" .. name .. ".rbxm", roblox.serializeModel({ groundAI(name) }))
+		print("wrote dist/" .. name .. ".rbxm")
+	end
 end
 
 if wantSourcemap then
@@ -229,6 +254,12 @@ if wantSourcemap then
 	table.insert(ToolKit.sources, { inst = droneScript, path = "src/runtime/enemies/DroneAI.server.luau" })
 	local workspaceNode = Instance.new("Workspace")
 	droneModel.Parent = workspaceNode
+	for _, name in GROUND_AIS do
+		local enemyModel = Instance.new("Model")
+		enemyModel.Name = name .. "Enemy"
+		groundAI(name).Parent = enemyModel
+		enemyModel.Parent = workspaceNode
+	end
 	local map = { name = "Game", className = "DataModel", children = { sourcemapNode(sourcemapPack), sourcemapNode(workspaceNode) } }
 	fs.writeFile("sourcemap.json", serde.encode("json", map, true))
 	print("wrote sourcemap.json")
