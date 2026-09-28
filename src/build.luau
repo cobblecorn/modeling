@@ -22,6 +22,7 @@ local WEAPONS = {
 	{ file = "TwinDaggers", module = "./models/TwinDaggers" },
 	{ file = "Longbow", module = "./models/Longbow" },
 	{ file = "ShoulderBlaster", module = "./models/ShoulderBlaster" },
+	{ file = "HealingStaff", module = "./models/HealingStaff" },
 }
 
 local wantPreview = table.find(process.args, "--preview") ~= nil

@@ -58,6 +58,36 @@ function Combat.hasLineOfSight(from: Vector3, to: Vector3, ignore: { Instance })
 	return workspace:Raycast(from, to - from, params) == nil
 end
 
+--[[
+	Allies for support abilities: yourself, and other players on your team.
+	Without teams (players Neutral), every player counts as an ally and
+	non-player Humanoids (NPC enemies) do not.
+]]
+function Combat.isAlly(weapon, humanoid: Humanoid): boolean
+	local target = humanoid.Parent
+	if target == weapon.character then
+		return true
+	end
+	local other = Players:GetPlayerFromCharacter(target)
+	if not other or not weapon.player then
+		return false
+	end
+	if weapon.player.Neutral or other.Neutral then
+		return true
+	end
+	return weapon.player.Team == other.Team
+end
+
+-- Heals up to MaxHealth; returns the amount actually restored.
+function Combat.heal(humanoid: Humanoid, amount: number): number
+	if humanoid.Health <= 0 then
+		return 0
+	end
+	local before = humanoid.Health
+	humanoid.Health = math.min(humanoid.MaxHealth, before + amount)
+	return humanoid.Health - before
+end
+
 -- True when `attackerPosition` is behind the target (for backstabs).
 function Combat.isBehind(target: Model, attackerPosition: Vector3): boolean
 	local root = target:FindFirstChild("HumanoidRootPart") :: BasePart?

@@ -2,13 +2,14 @@
 
 ![All five weapons](docs/previews/lineup.png)
 
-Rigged, scripted weapons for Roblox, plus a flying [enemy drone](#enemy-sentry-drone). The five weapons:
+Rigged, scripted weapons for Roblox, plus a flying [enemy drone](#enemy-sentry-drone). The six weapons:
 
 - Longsword
 - Battle Axe
 - Twin Daggers
 - Longbow with arrows and a quiver
 - Shoulder Blaster
+- Healing Staff, for a support class
 
 They're built from ordinary parts, so there are no meshes to upload. They work with R15 and R6 characters, on PC, mobile and gamepad. Each weapon is a single `Tool`, so you can drop it into `StarterPack` and play.
 
@@ -19,6 +20,7 @@ They're built from ordinary parts, so there are no meshes to upload. They work w
 | <img src="icons/TwinDaggers.png" width="64"> | **Twin Daggers** | Fast stabs, alternating hands. **x2 damage from behind** | **Throw** the off-hand dagger. It sticks in its target and comes back after 3 s |
 | <img src="icons/Longbow.png" width="64"> | **Longbow** | Hold to **draw**, release to fire. Longer draws fly faster and hit harder. Headshots do x1.5 | Hold to **zoom** |
 | <img src="icons/ShoulderBlaster.png" width="64"> | **Shoulder Blaster** | Hold for **rapid-fire** energy bolts. The turret tracks your aim | Hold to **charge**, then release for an explosive shot (area damage) |
+| <img src="icons/HealingStaff.png" width="64"> | **Healing Staff** (support) | Click or hold to **Mend**: a beam heals the ally you aim at (with built-in aim assist) or stings an enemy | **Renewal**: a pulse that heals every ally around you, including yourself (10 s cooldown) |
 
 ## Install
 
@@ -40,6 +42,7 @@ Select a Tool and scroll to **Attributes** in the Properties window. Everything 
 | Twin Daggers | `Damage` `Cooldown` `Range` `BackstabMultiplier` `ThrowDamage` `ThrowSpeed` `ThrowCooldown` |
 | Longbow | `MinDamage` `MaxDamage` `DrawTime` `MinSpeed` `MaxSpeed` `Cooldown` `ArrowLifetime` `ZoomFOV` `DrawWalkSpeed` `ScriptedDraw` |
 | Shoulder Blaster | `Damage` `FireRate` `BoltSpeed` `Range` `ChargeTime` `ChargedDamage` `ChargedRadius` `ChargedCooldown` `TurnSpeed` `YawLeft` `YawRight` `PitchUp` `PitchDown` |
+| Healing Staff | `HealAmount` `Cooldown` `Range` `AimAssist` `EnemyDamage` `PulseHeal` `PulseRadius` `PulseCooldown` |
 | All | `FriendlyFire` (hit teammates), `ShowHolstered` (show the weapon on the body while unequipped), `Anim...` (your animations, see below) |
 
 ## Rigging
@@ -65,6 +68,7 @@ Tool
 | Twin Daggers | `BodyAttach` (right), `OffhandAttach` (left) | both hands. Worn crossed at the small of the back |
 | Longbow | `BodyAttach` (riser), `UpperLimb`, `LowerLimb`, `Nock` (string), `QuiverAttach` | right hand. Bow worn on the back, quiver on the right hip |
 | Shoulder Blaster | `BodyAttach` (pauldron), `YawBase` (turn), `Cannon` (tilt), `Barrel` (recoil) | `UpperTorso` at `RightCollarAttachment` |
+| Healing Staff | `BodyAttach`, `Crystal` (floats, flares when casting) | right hand. Worn across the back, crystal over the left shoulder |
 
 A few details:
 
@@ -93,6 +97,7 @@ The weapons work immediately with Roblox's built-in tool animations, plus script
 | Twin Daggers | `AnimIdle` `AnimStabRight` `AnimStabLeft` `AnimThrow` |
 | Longbow | `AnimIdle` `AnimDraw` `AnimRelease` |
 | Shoulder Blaster | `AnimEquip` |
+| Healing Staff | `AnimIdle` `AnimCast` `AnimPulse` |
 
 When an `Anim...` attribute is set, that animation replaces the built-in fallback for that move. Animations played this way replicate to every player automatically. The bow's string and limbs are always script-driven; if you keyframe them yourself, set `ScriptedDraw = false`.
 
@@ -100,6 +105,7 @@ When an `Anim...` attribute is set, that animation replaces the built-in fallbac
 
 - **Kill credit**: damage leaves a standard `creator` ObjectValue on the victim's Humanoid, so classic leaderboard and KO scripts work unchanged.
 - **Teams**: teammates can't hurt each other unless `FriendlyFire` is on. Neutral players can hit anyone.
+- **Healing**: the staff heals you and your teammates. If your game has no teams, it heals every player and treats NPCs as enemies. That rule is `Combat.isAlly` in `WeaponCore`.
 - **Blocking**: any character with the attribute `Blocking = true` takes `(1 - BlockReduction)` damage from frontal hits by any weapon in this pack. Your own abilities can set it too.
 - **NPCs**: anything with a Humanoid can be hit.
 - **Projectiles** fly in `workspace.WeaponProjectiles`. They're simulated on the server with real physics and checked with raycasts every frame, so fast shots don't pass through targets.

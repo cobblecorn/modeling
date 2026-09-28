@@ -18,6 +18,7 @@ local EXPECT = {
 	BattleAxe = { models = { "BattleAxe" }, sounds = { "Chop", "Whirlwind", "Equip" } },
 	TwinDaggers = { models = { "MainDagger", "OffhandDagger" }, sounds = { "Stab", "Throw", "Equip" } },
 	Longbow = { models = { "Longbow", "Quiver" }, sounds = { "Draw", "Release", "Equip" }, joints = { "Nock", "UpperLimb", "LowerLimb" } },
+	HealingStaff = { models = { "HealingStaff" }, sounds = { "Cast", "Pulse", "Equip" }, joints = { "Crystal" } },
 	ShoulderBlaster = { models = { "ShoulderBlaster" }, sounds = { "Fire", "ChargedFire", "Charging", "Impact" }, joints = { "Yaw", "Pitch", "Recoil" }, noHandle = true },
 }
 
@@ -106,7 +107,7 @@ for _, child in pack:GetChildren() do
 		tools += 1
 	end
 end
-check(tools == 5, "pack should contain 5 tools, found " .. tools)
+check(tools == 6, "pack should contain 6 tools, found " .. tools)
 check(pack:FindFirstChild("WeaponRigger") ~= nil, "pack missing WeaponRigger")
 
 if failures > 0 then
