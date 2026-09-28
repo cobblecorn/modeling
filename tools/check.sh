@@ -10,7 +10,7 @@ DEFS=${ROBLOX_DEFS:-globalTypes.d.luau}
 
 "$LUNE" run src/build.luau --sourcemap
 out=$("$LUAU_LSP" analyze --definitions="$DEFS" --sourcemap=sourcemap.json --formatter=plain \
-	src/runtime/WeaponCore/*.luau src/runtime/weapons/*.luau src/runtime/WeaponRigger.luau 2>&1 || true)
+	src/runtime/WeaponCore/*.luau src/runtime/weapons/*.luau src/runtime/WeaponRigger.luau src/runtime/enemies/*.luau 2>&1 || true)
 # the shared modules are reported once per tool; show each problem once
 problems=$(printf '%s\n' "$out" | sed -E 's# \[game[^]]*\]##' | grep -E '\.luau:[0-9]+' | sort -u || true)
 if [ -n "$problems" ]; then

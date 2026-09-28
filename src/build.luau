@@ -206,6 +206,12 @@ if not only and not ToolKit.skipScripts then
 	rigger.Parent = pack
 	fs.writeFile("dist/WeaponRigger.rbxm", roblox.serializeModel({ rigger:Clone() }))
 	fs.writeFile("dist/WeaponsPack.rbxm", roblox.serializeModel({ pack }))
+
+	local droneAI = Instance.new("Script")
+	droneAI.Name = "DroneAI"
+	droneAI.Source = fs.readFile("src/runtime/enemies/DroneAI.server.luau")
+	fs.writeFile("dist/DroneAI.rbxm", roblox.serializeModel({ droneAI }))
+	print("wrote dist/DroneAI.rbxm")
 	print("wrote dist/WeaponsPack.rbxm")
 end
 
@@ -214,7 +220,15 @@ if wantSourcemap then
 	rigger.Name = "WeaponRigger"
 	rigger.Parent = sourcemapPack
 	table.insert(ToolKit.sources, { inst = rigger, path = "src/runtime/WeaponRigger.luau" })
-	local map = { name = "Game", className = "DataModel", children = { sourcemapNode(sourcemapPack) } }
+	local droneModel = Instance.new("Model")
+	droneModel.Name = "SentryDrone"
+	local droneScript = Instance.new("Script")
+	droneScript.Name = "DroneAI"
+	droneScript.Parent = droneModel
+	table.insert(ToolKit.sources, { inst = droneScript, path = "src/runtime/enemies/DroneAI.server.luau" })
+	local workspaceNode = Instance.new("Workspace")
+	droneModel.Parent = workspaceNode
+	local map = { name = "Game", className = "DataModel", children = { sourcemapNode(sourcemapPack), sourcemapNode(workspaceNode) } }
 	fs.writeFile("sourcemap.json", serde.encode("json", map, true))
 	print("wrote sourcemap.json")
 end

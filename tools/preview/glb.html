@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#20232b}</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const W=1600,H=900;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);r.setScissorTest(true);r.toneMapping=THREE.ACESFilmicToneMapping;document.body.appendChild(r.domElement);
+const env=new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(),0.04).texture;
+window.show=async(files,dirs)=>{
+  r.clear();
+  const n=files.length, w=W/n;
+  for(let i=0;i<n;i++){
+    const g=await new GLTFLoader().loadAsync(files[i]);
+    const s=new THREE.Scene();s.background=new THREE.Color(0x2a2e38);s.environment=env;
+    const l=new THREE.DirectionalLight(0xffffff,1.5);l.position.set(3,6,5);s.add(l,new THREE.AmbientLight(0xffffff,0.3),g.scene);
+    g.scene.updateMatrixWorld(true);
+    const box=new THREE.Box3().setFromObject(g.scene),c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+    const d=dirs?.[i]||[1,0.5,1.4];
+    const cam=new THREE.PerspectiveCamera(30,w/H,0.01,1000);
+    cam.position.copy(c).add(new THREE.Vector3(...d).normalize().multiplyScalar(sz.length()*1.9));cam.lookAt(c);
+    r.setViewport(i*w,0,w,H);r.setScissor(i*w,0,w,H);r.render(s,cam);
+    window.info=(window.info||'')+files[i]+' size '+sz.toArray().map(v=>v.toFixed(2))+'\n';
+  }
+  return window.info;
+};
+window.panels=async(list)=>{
+  r.clear();
+  const n=list.length, cols=Math.min(n,list.length>4?3:2), rows=Math.ceil(n/cols), w=W/cols, h=H/rows;
+  for(let i=0;i<n;i++){
+    const P=list[i];
+    const g=await new GLTFLoader().loadAsync(P.file);
+    const s=new THREE.Scene();s.background=new THREE.Color(0x2a2e38);s.environment=env;
+    const l=new THREE.DirectionalLight(0xffffff,1.5);l.position.set(3,6,5);s.add(l,new THREE.AmbientLight(0xffffff,0.3),g.scene);
+    if(P.anim){const mx=new THREE.AnimationMixer(g.scene);const clip=g.animations.find(a=>a.name===P.anim);mx.clipAction(clip).play();mx.setTime(P.time||0);}
+    g.scene.updateMatrixWorld(true);
+    const ref=P.frame||[[-1.3,-1.8,-1.1],[1.3,0.6,1.1]];
+    const box=new THREE.Box3(new THREE.Vector3(...ref[0]),new THREE.Vector3(...ref[1]));
+    const c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+    const cam=new THREE.PerspectiveCamera(30,w/h,0.01,1000);
+    cam.position.copy(c).add(new THREE.Vector3(...(P.dir||[1,0.5,1.4])).normalize().multiplyScalar(sz.length()*(P.dist||1.7)));cam.lookAt(c);
+    const col=i%cols,row=Math.floor(i/cols);
+    r.setViewport(col*w,H-(row+1)*h,w,h);r.setScissor(col*w,H-(row+1)*h,w,h);r.render(s,cam);
+  }
+  return 'ok';
+};
+window.lineup=async(items)=>{
+  r.setScissor(0,0,W,H);r.setViewport(0,0,W,H);r.clear();
+  const s=new THREE.Scene();s.background=new THREE.Color(0x2a2e38);s.environment=env;
+  const l=new THREE.DirectionalLight(0xffffff,1.5);l.position.set(3,6,5);s.add(l,new THREE.AmbientLight(0xffffff,0.3));
+  for(const it of items){const g=await new GLTFLoader().loadAsync(it.file);g.scene.position.set(...it.pos);s.add(g.scene);}
+  const grid=new THREE.GridHelper(12,24,0x555a66,0x3a3e48);s.add(grid);
+  const cam=new THREE.PerspectiveCamera(30,W/H,0.01,1000);cam.position.set(0.6,2.2,9.5);cam.lookAt(0.6,1.3,0);r.render(s,cam);return 'ok';};
+window.ready=true;
+</script></body></html>
