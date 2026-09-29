@@ -12,7 +12,6 @@
 ]]
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local PathfindingService = game:GetService("PathfindingService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
